@@ -1,0 +1,88 @@
+esphome:
+  name: water-softener
+  friendly_name: water-softener
+
+esp32:
+  board: esp32dev
+
+# WiFi connection, replace these with values for your WiFi.
+wifi:
+  ssid: "Lovenet IOT"
+  password: "Portland"
+  domain: ".thesteamedcrab.com"
+  fast_connect: true
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+# Enable over-the-air updates.
+ota:
+
+# Enable Web server.
+web_server:
+  port: 80
+# Sync time with Home Assistant.
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# Exposed switches.
+# Switch to restart the salt_level_sensor.   
+switch:
+  - platform: restart
+    name: "salt_level_sensor Restart"
+
+sensor:
+  # Uptime sensor.
+  - platform: uptime
+    name: salt_level_sensor Uptime
+
+  - platform: ultrasonic
+    id: distance_in_meters
+    trigger_pin:
+      number: GPIO3
+      inverted: true
+    echo_pin: GPIO1
+    name: "Sensor Reading in meters"
+    icon: "mdi:ruler"
+    update_interval: 10s
+    unit_of_measurement: "m"
+    #pulse_time: 20us
+    pulse_time: 5us
+    #timeout: 4.0m
+    timeout: 20m
+    accuracy_decimals: 4
+    #accuracy_decimals: 0
+    filters:
+      - filter_out: nan
+
+  - platform: copy
+    id: distance_in_inches
+    source_id: distance_in_meters
+    name: "Sensor Reading in Inches"
+    unit_of_measurement: "in"
+    icon: "mdi:ruler"
+    #accuracy_decimals: 4
+    accuracy_decimals: 0
+    filters:
+      # Convert meters to inches: meters * 39.37 = inches
+      - lambda: return (x * 39.37);
+
+  - platform: copy
+    source_id: distance_in_inches
+    name: "Sensor Reading in Percentage"
+    unit_of_measurement: "%"
+    icon: "mdi:water"
+    accuracy_decimals: 0
+    filters:
+      # https://www.chindemax.com/2020/10/14/walter-softener-salt-level-checker-uisng-nodemcu-homeassistant/
+      # Usable Salt Percentage % = ( (Salt Height – Brine Hight)/(Total Bin Height – Brine Height) )* 100
+      # Convert meters to inches: meters * 39.37 = inches
+      # In inches, Brine Height (bh) = 7.5
+      # In inches, Total Bin Height (tbh) = 30
+      #- lambda: return (((x - 7.5) / (30 - 7.5)) * 100);
+      - lambda: return (((30 - 7.5 - x) * 100) / (30 - 7.5));
+      #- lambda: return ( 33 - ( x * 39.3701 ) ) * ( 100 / 33 );

@@ -1,0 +1,46 @@
+# https://smarthomepursuits.com/how-to-add-smart-scale-home-assistant/
+esphome:
+  name: bt-scale
+  comment: ESP32 Bluetooth Test Scale
+  platform: ESP32
+  board: esp32dev
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+wifi:
+  ssid: "Lovenet IOT"
+  password: "Portland"
+  domain: ".thesteamedcrab.com"
+  fast_connect: true
+
+captive_portal:
+
+esp32_ble_tracker:
+
+sensor:
+  # XIAOMI MISCALE
+  - platform: xiaomi_miscale
+    mac_address: '88:22:B2:EC:C4:E4'
+    weight:
+      id: "miscale_weight"
+      name: "Rob Weight"
+      icon: mdi:scale-bathroom
+      accuracy_decimals: 2
+      on_value:
+        then:
+          - lambda: |-
+              const float bmi_factor = 0.29860551;
+              return id(miscale_bmi).publish_state(x * bmi_factor);
+      
+  - platform: template
+    id: "miscale_bmi"
+    name: "Rob BMI"
+    icon: mdi:human-pregnant
+    unit_of_measurement: ""
+    accuracy_decimals: 1
